@@ -13,7 +13,7 @@ import (
 func TestSSOGroups(t *testing.T) {
 	testingJWT := os.Getenv("JWT")
 
-	toolbox := GetToolbox(context.Background())
+	toolbox := GetToolbox()
 	groups, err := toolbox.GetJWTGroups(context.Background(), testingJWT)
 	if err != nil {
 		t.Error(err)

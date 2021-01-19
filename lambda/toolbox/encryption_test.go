@@ -7,8 +7,8 @@ import (
 )
 
 func TestEncrypt(t *testing.T) {
+	toolbox := GetToolbox()
 	ctx := context.Background()
-	toolbox := GetToolbox(ctx)
 	getTestingAWSSession(ctx, toolbox)
 
 	testData := []byte("Test Data")

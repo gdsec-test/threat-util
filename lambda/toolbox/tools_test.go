@@ -1,14 +1,13 @@
 package toolbox
 
 import (
-	"context"
 	"reflect"
 	"testing"
 )
 
 func TestGetToolbox(t *testing.T) {
 	// Test to make sure defaults are being set properly
-	toolbox := GetToolbox(context.Background())
+	toolbox := GetToolbox()
 
 	// Check defaults
 	typeOf := reflect.TypeOf(*toolbox)

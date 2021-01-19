@@ -21,8 +21,8 @@ func getTestingAWSSession(ctx context.Context, t *Toolbox) {
 }
 
 func TestGetParameter(t *testing.T) {
+	toolbox := GetToolbox()
 	ctx := context.Background()
-	toolbox := GetToolbox(ctx)
 	getTestingAWSSession(ctx, toolbox)
 
 	// Get parameter
