@@ -20,6 +20,7 @@ import (
 const (
 	defaultTimeout             = time.Second * 5
 	asherahKMSKeyParameterName = "/AdminParams/Team/KMSKey"
+	ssoHostENVVar              = "SSO_HOST"
 )
 
 // Toolbox is standardized useful things
@@ -74,6 +75,10 @@ func GetToolbox() *Toolbox {
 		awsRegion = region
 	}
 	t.LoadAWSSession(credentials.NewEnvCredentials(), awsRegion)
+
+	if ssoHost := os.Getenv(ssoHostENVVar); ssoHost != "" {
+		t.SSOHostURL = ssoHost
+	}
 
 	t.SetHTTPClient(&http.Client{Timeout: defaultTimeout})
 	opentracing.SetGlobalTracer(t.Tracer)
