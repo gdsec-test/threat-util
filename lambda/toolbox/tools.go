@@ -20,11 +20,13 @@ import (
 const (
 	defaultTimeout             = time.Second * 5
 	asherahKMSKeyParameterName = "/AdminParams/Team/KMSKey"
+	ssoHostParameterName       = "/ThreatTools/SSOHost"
 )
 
 // Toolbox is standardized useful things
 type Toolbox struct {
 	Logger *logrus.Logger
+	// Domain of SSO host to use.
 	// Defaults to defaultSSOEndpoint
 	SSOHostURL string `default:"sso.gdcorp.tools"`
 	Tracer     opentracing.Tracer
@@ -52,7 +54,7 @@ type Toolbox struct {
 }
 
 // GetToolbox gets useful, standardized tools for processing with a lambda
-func GetToolbox() *Toolbox {
+func GetToolbox(ctx context.Context) *Toolbox {
 	t := &Toolbox{
 		Logger:          logrus.New(),
 		Tracer:          apmot.New(), // Wrap default APM Tracer with open tracing tracer
@@ -74,6 +76,12 @@ func GetToolbox() *Toolbox {
 		awsRegion = region
 	}
 	t.LoadAWSSession(credentials.NewEnvCredentials(), awsRegion)
+
+	// Check if we have a different SSO endpoint
+	parameter, err := t.GetFromParameterStore(ctx, ssoHostParameterName, false)
+	if err == nil {
+		t.SSOHostURL = parameter.String()
+	}
 
 	t.SetHTTPClient(&http.Client{Timeout: defaultTimeout})
 	opentracing.SetGlobalTracer(t.Tracer)
