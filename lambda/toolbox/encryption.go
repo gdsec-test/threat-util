@@ -58,17 +58,23 @@ func (t *Toolbox) Encrypt(ctx context.Context, jobID string, data []byte) (*appe
 // GetAsheraSession Get the current ashera session of this tookbox, or create one if it doesn't exist
 func (t *Toolbox) GetAsheraSession(ctx context.Context, jobID string) (*appencryption.Session, error) {
 	// Check if we already have a session
-	if asheraSession, ok := t.AsherahSessions[jobID]; ok {
+	if asheraSession, ok := t.AsherahSession[jobID]; ok {
 		return asheraSession, nil
+	}
+
+	// Close the old sessions
+	for jobID, ashrahSession := range t.AsherahSession {
+		ashrahSession.Close()
+		delete(t.AsherahSession, jobID)
 	}
 
 	session, err := t.getAsheraSession(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
-	t.AsherahSessions[jobID] = session
+	t.AsherahSession[jobID] = session
 
-	return t.AsherahSessions[jobID], nil
+	return t.AsherahSession[jobID], nil
 }
 
 // getAsheraSession Performs all the setup for getting an ashera session
