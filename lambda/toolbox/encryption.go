@@ -63,9 +63,9 @@ func (t *Toolbox) GetAsheraSession(ctx context.Context, jobID string) (*appencry
 	}
 
 	// Close the old sessions
-	for jobID, ashrahSession := range t.AsherahSession {
-		ashrahSession.Close()
-		delete(t.AsherahSession, jobID)
+	err := t.CloseAsherahSessions(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	session, err := t.getAsheraSession(ctx, jobID)
@@ -77,16 +77,51 @@ func (t *Toolbox) GetAsheraSession(ctx context.Context, jobID string) (*appencry
 	return t.AsherahSession[jobID], nil
 }
 
+// CloseAsherahSessions Closes any asherah sessions we have open
+func (t *Toolbox) CloseAsherahSessions(ctx context.Context) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "CloseAsherahSessions")
+	defer span.Finish()
+	for jobID, ashrahSession := range t.AsherahSession {
+		err := ashrahSession.Close()
+		if err != nil {
+			return fmt.Errorf("error closing asherah session: %w", err)
+		}
+		delete(t.AsherahSession, jobID)
+	}
+	return nil
+}
+
 // getAsheraSession Performs all the setup for getting an ashera session
 func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appencryption.Session, error) {
 	if t.AWSSession == nil {
 		return nil, ErrNoAWSSession
 	}
 
-	// Build the Metastore
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsheraSession")
-	span.LogKV("sessionID", sessionID)
+	defer span.Finish()
+
+	// Build session factory if we haven't already
+	if t.AsherahSessionFactory == nil {
+		err := t.getAsherahSessionFactory(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error getting session factory: %w", err)
+		}
+	}
+
+	session, err := t.AsherahSessionFactory.GetSession(sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating session: %w", err)
+	}
+
+	return session, nil
+}
+
+// Build the asherah session factory
+func (t *Toolbox) getAsherahSessionFactory(ctx context.Context) error {
+	// Build the Metastore
+	var span opentracing.Span
+	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsheraSessionFactory")
 	defer span.Finish()
 
 	// Create metastore from AWS session
@@ -102,7 +137,7 @@ func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appe
 		// Look up the ARN in aws SSM (parameter store)
 		kmsKey, err := t.GetFromParameterStore(ctx, asherahKMSKeyParameterName, false)
 		if err != nil {
-			return nil, fmt.Errorf("error getting ARN of KMS Key: %w", err)
+			return fmt.Errorf("error getting ARN of KMS Key: %w", err)
 		}
 		t.AsherahRegionARN = *kmsKey.Value
 	}
@@ -115,7 +150,7 @@ func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appe
 	// Build the Key Management Service using the region dictionary and your preferred (usually current) region
 	keyManagementService, err := kms.NewAWS(crypto, *t.AWSSession.Config.Region, regionArnMap)
 	if err != nil {
-		return nil, fmt.Errorf("error creating aws key management service: %w", err)
+		return fmt.Errorf("error creating aws key management service: %w", err)
 	}
 
 	// Create a session factory
@@ -130,10 +165,6 @@ func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appe
 		crypto,
 	)
 
-	session, err := sessionFactory.GetSession(sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("error creating session: %w", err)
-	}
-
-	return session, nil
+	t.AsherahSessionFactory = sessionFactory
+	return nil
 }
