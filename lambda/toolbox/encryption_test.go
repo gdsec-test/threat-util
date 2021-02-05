@@ -20,7 +20,7 @@ func TestEncrypt(t *testing.T) {
 		return
 	}
 
-	decryptedData, err := toolbox.Dencrypt(ctx, "TestJob", *encryptedData)
+	decryptedData, err := toolbox.Decrypt(ctx, "TestJob", *encryptedData)
 	if err != nil {
 		t.Errorf("error decrypting: %w", err)
 		return

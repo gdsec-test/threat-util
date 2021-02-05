@@ -2,6 +2,7 @@ package toolbox
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"reflect"
@@ -44,9 +45,10 @@ type Toolbox struct {
 
 	// Asherah
 
-	AsherahDBTableName string                            `default:"EncryptionKey"`
-	AsherahSessions    map[string]*appencryption.Session // Map of jobIDs to asherah sessions
-	AsherahRegion      string                            `default:"us-west-2"` // The region that ahserah will use for it's KMS (key management system)
+	AsherahDBTableName    string                            `default:"EncryptionKey"`
+	AsherahSession        map[string]*appencryption.Session // Map of jobID to asherah sessions
+	AsherahSessionFactory *appencryption.SessionFactory
+	AsherahRegion         string `default:"us-west-2"` // The region that asherah will use for it's KMS (key management system)
 	// The ARN to use for asherah's KMS if you want to override the default.
 	// By default it will look up the asherahKMSKeyParameterName in SSM and use the _value_ of it as the ARN
 	AsherahRegionARN string
@@ -55,9 +57,9 @@ type Toolbox struct {
 // GetToolbox gets useful, standardized tools for processing with a lambda
 func GetToolbox() *Toolbox {
 	t := &Toolbox{
-		Logger:          logrus.New(),
-		Tracer:          apmot.New(), // Wrap default APM Tracer with open tracing tracer
-		AsherahSessions: map[string]*appencryption.Session{},
+		Logger:         logrus.New(),
+		Tracer:         apmot.New(), // Wrap default APM Tracer with open tracing tracer
+		AsherahSession: map[string]*appencryption.Session{},
 	}
 
 	// Set any defaults
@@ -95,8 +97,15 @@ func (t *Toolbox) SetHTTPClient(client *http.Client) {
 
 // Close all our opened and live resources for soft shutdown
 func (t *Toolbox) Close(ctx context.Context) error {
-	for _, asheraSession := range t.AsherahSessions {
-		asheraSession.Close()
+	err := t.CloseAsherahSessions(ctx)
+	if err != nil {
+		return fmt.Errorf("error closing asherah sessions: %w", err)
+	}
+	if t.AsherahSessionFactory != nil {
+		err = t.AsherahSessionFactory.Close()
+		if err != nil {
+			return fmt.Errorf("error closing asherah session factory: %w", err)
+		}
 	}
 
 	// Although we use open tracing as our generic tracing interface,
