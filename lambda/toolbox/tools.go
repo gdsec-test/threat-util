@@ -48,7 +48,7 @@ type Toolbox struct {
 	AsherahDBTableName    string                            `default:"EncryptionKey"`
 	AsherahSession        map[string]*appencryption.Session // Map of jobID to asherah sessions
 	AsherahSessionFactory *appencryption.SessionFactory
-	AsherahRegion         string `default:"us-west-2"` // The region that ahserah will use for it's KMS (key management system)
+	AsherahRegion         string `default:"us-west-2"` // The region that asherah will use for it's KMS (key management system)
 	// The ARN to use for asherah's KMS if you want to override the default.
 	// By default it will look up the asherahKMSKeyParameterName in SSM and use the _value_ of it as the ARN
 	AsherahRegionARN string
