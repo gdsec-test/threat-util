@@ -101,7 +101,7 @@ func (t *Toolbox) Close(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error closing asherah sessions: %w", err)
 	}
-	if t.AsherahSession != nil {
+	if t.AsherahSessionFactory != nil {
 		err = t.AsherahSessionFactory.Close()
 		if err != nil {
 			return fmt.Errorf("error closing asherah session factory: %w", err)
