@@ -11,15 +11,15 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-// Dencrypt a data blob using ashera.
-// The jobID is used to find the appropriate ashera session to use.
+// Dencrypt a data blob using asherah.
+// The jobID is used to find the appropriate asherah session to use.
 func (t *Toolbox) Dencrypt(ctx context.Context, jobID string, decryptionRecord appencryption.DataRowRecord) ([]byte, error) {
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, "DecryptData")
 	span.LogKV("dataSizeBytes", len(decryptionRecord.Data))
 	defer span.Finish()
 
-	session, err := t.GetAsheraSession(ctx, jobID)
+	session, err := t.GetAsherahSession(ctx, jobID)
 	if err != nil {
 		span.LogKV("error", err)
 		return nil, fmt.Errorf("error getting asherah session: %w", err)
@@ -33,15 +33,15 @@ func (t *Toolbox) Dencrypt(ctx context.Context, jobID string, decryptionRecord a
 	return out, nil
 }
 
-// Encrypt a data blob using ashera
-// The jobID is used to find the appropriate ashera session to use.
+// Encrypt a data blob using asherah
+// The jobID is used to find the appropriate asherah session to use.
 func (t *Toolbox) Encrypt(ctx context.Context, jobID string, data []byte) (*appencryption.DataRowRecord, error) {
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, "EncryptData")
 	span.LogKV("dataSizeBytes", len(data))
 	defer span.Finish()
 
-	session, err := t.GetAsheraSession(ctx, jobID)
+	session, err := t.GetAsherahSession(ctx, jobID)
 	if err != nil {
 		span.LogKV("error", err)
 		return nil, fmt.Errorf("error getting asherah session: %w", err)
@@ -56,10 +56,10 @@ func (t *Toolbox) Encrypt(ctx context.Context, jobID string, data []byte) (*appe
 }
 
 // GetAsherahSession Get the current asherah session of this tookbox, or create one if it doesn't exist
-func (t *Toolbox) GetAsheraSession(ctx context.Context, jobID string) (*appencryption.Session, error) {
+func (t *Toolbox) GetAsherahSession(ctx context.Context, jobID string) (*appencryption.Session, error) {
 	// Check if we already have a session
-	if asheraSession, ok := t.AsherahSession[jobID]; ok {
-		return asheraSession, nil
+	if asherahSession, ok := t.AsherahSession[jobID]; ok {
+		return asherahSession, nil
 	}
 
 	// Close the old sessions
@@ -68,7 +68,7 @@ func (t *Toolbox) GetAsheraSession(ctx context.Context, jobID string) (*appencry
 		return nil, err
 	}
 
-	session, err := t.getAsheraSession(ctx, jobID)
+	session, err := t.getAsherahSession(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,14 +91,14 @@ func (t *Toolbox) CloseAsherahSessions(ctx context.Context) error {
 	return nil
 }
 
-// getAsheraSession Performs all the setup for getting an ashera session
-func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appencryption.Session, error) {
+// getAsherahSession Performs all the setup for getting an asherah session
+func (t *Toolbox) getAsherahSession(ctx context.Context, sessionID string) (*appencryption.Session, error) {
 	if t.AWSSession == nil {
 		return nil, ErrNoAWSSession
 	}
 
 	var span opentracing.Span
-	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsheraSession")
+	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsherahSession")
 	defer span.Finish()
 
 	// Build session factory if we haven't already
@@ -121,7 +121,7 @@ func (t *Toolbox) getAsheraSession(ctx context.Context, sessionID string) (*appe
 func (t *Toolbox) getAsherahSessionFactory(ctx context.Context) error {
 	// Build the Metastore
 	var span opentracing.Span
-	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsheraSessionFactory")
+	span, ctx = opentracing.StartSpanFromContext(ctx, "SetUpAsherahSessionFactory")
 	defer span.Finish()
 
 	// Create metastore from AWS session
