@@ -11,9 +11,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-// Dencrypt a data blob using asherah.
+// Decrypt a data blob using asherah.
 // The jobID is used to find the appropriate asherah session to use.
-func (t *Toolbox) Dencrypt(ctx context.Context, jobID string, decryptionRecord appencryption.DataRowRecord) ([]byte, error) {
+func (t *Toolbox) Decrypt(ctx context.Context, jobID string, decryptionRecord appencryption.DataRowRecord) ([]byte, error) {
 	var span opentracing.Span
 	span, ctx = opentracing.StartSpanFromContext(ctx, "DecryptData")
 	span.LogKV("dataSizeBytes", len(decryptionRecord.Data))
