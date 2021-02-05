@@ -101,9 +101,11 @@ func (t *Toolbox) Close(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error closing asherah sessions: %w", err)
 	}
-	err = t.AsherahSessionFactory.Close()
-	if err != nil {
-		return fmt.Errorf("error closing asherah session factory: %w", err)
+	if t.AsherahSession != nil {
+		err = t.AsherahSessionFactory.Close()
+		if err != nil {
+			return fmt.Errorf("error closing asherah session factory: %w", err)
+		}
 	}
 
 	// Although we use open tracing as our generic tracing interface,
